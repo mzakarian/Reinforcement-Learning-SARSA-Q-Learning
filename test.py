@@ -47,8 +47,29 @@ rect = canvas.create_rectangle(
     rectangle_center[0] + 15, rectangle_center[1] + 15,
     fill='red')
 
-img = tk.PhotoImage(file=r"viking.gif")
-canvas.create_image((20, 20), anchor=tk.NW, image=img)
+# create soft wind
+softWinds = []
+strongWinds = []
+for i in range(7):
+    print(i)
+    for j in range(6):
+        if 7 <= (j+4) <= 8:
+            wind_center = origin + np.array([UNIT * (j + 3), UNIT * i])
+            wind = canvas.create_rectangle(
+                wind_center[0] - 15, wind_center[1] - 15,
+                wind_center[0] + 15, wind_center[1] + 15,
+                fill='blue')
+            strongWinds.append(canvas.coords(wind))
+        else:
+            wind_center = origin + np.array([UNIT * (j + 3), UNIT * i])
+            wind = canvas.create_rectangle(
+                wind_center[0] - 15, wind_center[1] - 15,
+                wind_center[0] + 15, wind_center[1] + 15,
+                fill='black')
+            softWinds.append(canvas.coords(wind))
+
+print(softWinds)
+print(strongWinds)
 
 # pack all
 canvas.pack()

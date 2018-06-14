@@ -6,21 +6,12 @@ Unlike Q learning which is a offline updating method, Sarsa is updating while in
 You will see the sarsa is more coward when punishment is close because it cares about all behaviours,
 while q learning is more brave because it only cares about maximum behaviour.
 """
-from numpy.f2py.crackfortran import expectbegin
-
-try:
-    from .maze_env import Maze
-except Exception: #ImportError
-    from maze_env import Maze
-
-try:
-    from .RL_brain import SarsaTable
-except Exception: #ImportError
-    from RL_brain import SarsaTable
+from maze_env import Maze
+from RL_brain import SarsaTable
 
 
 def update():
-    for episode in range(100):
+    for episode in range(5):
         # initial observation
         observation = env.reset()
 
