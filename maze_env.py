@@ -45,16 +45,6 @@ class Maze(tk.Tk, object):
         # create origin
         origin = np.array([20, 20])
 
-        # create goal
-        goal_center = origin + np.array([UNIT * 7, UNIT * 3])
-        self.img1 = tk.PhotoImage(file=r"goal.gif")
-        self.goal = self.canvas.create_image((goal_center[0] - 15, goal_center[1] - 15), anchor=tk.NW, image=self.img1)
-
-        # create boat
-        boat_center = origin + np.array([0, UNIT * 3])
-        self.img2 = tk.PhotoImage(file=r"boat.gif")
-        self.boat = self.canvas.create_image((boat_center[0] - 15, boat_center[1] - 15), anchor=tk.NW, image=self.img2)
-
         # create wind
         self.softWinds = []
         self.strongWinds = []
@@ -62,9 +52,7 @@ class Maze(tk.Tk, object):
         counter = 0
         for i in range(7):
             for j in range(6):
-                if i == 3 and (j + 4) == 8:
-                    counter -= 1
-                elif 7 <= (j + 4) <= 8:
+                if 7 <= (j + 4) <= 8:
                     wind_center = origin + np.array([UNIT * (j + 3), UNIT * i])
                     self.img.append(tk.PhotoImage(file=r"windStrong.gif"))
                     self.wind = self.canvas.create_image((wind_center[0] - 15, wind_center[1] - 15), anchor=tk.NW,
@@ -77,6 +65,18 @@ class Maze(tk.Tk, object):
                                                          image=self.img[counter])
                     self.softWinds.append(self.canvas.coords(self.wind))
                 counter += 1
+
+        # create goal
+        goal_center = origin + np.array([UNIT * 7, UNIT * 3])
+        self.img1 = tk.PhotoImage(file=r"goal.gif")
+        self.goal = self.canvas.create_image((goal_center[0] - 15, goal_center[1] - 15), anchor=tk.NW,
+                                             image=self.img1)
+
+        # create boat
+        boat_center = origin + np.array([0, UNIT * 3])
+        self.img2 = tk.PhotoImage(file=r"boat.gif")
+        self.boat = self.canvas.create_image((boat_center[0] - 15, boat_center[1] - 15), anchor=tk.NW,
+                                             image=self.img2)
 
         # pack all
         self.canvas.pack()
@@ -96,18 +96,55 @@ class Maze(tk.Tk, object):
     def step(self, action):
         s = self.canvas.coords(self.boat)
         base_action = np.array([0, 0])
-        if action == 0:  # up
-            if s[1] > UNIT:
+        if s in self.strongWinds:
+            if action == 0:  # up
+                if s[1] > UNIT:
+                    base_action[1] -= UNIT
+            elif action == 1:  # down
+                if s[1] < (MAZE_H - 1) * UNIT:
+                    base_action[1] += UNIT
+            elif action == 2:  # right
+                if s[0] < (MAZE_W - 1) * UNIT:
+                    base_action[0] += UNIT
+            elif action == 3:  # left
+                if s[0] > UNIT:
+                    base_action[0] -= UNIT
+
+            if s[1] + base_action[1] > UNIT * 2:
+                base_action[1] -= UNIT * 2
+            elif s[1] + base_action[1] > UNIT:
                 base_action[1] -= UNIT
-        elif action == 1:  # down
-            if s[1] < (MAZE_H - 1) * UNIT:
-                base_action[1] += UNIT
-        elif action == 2:  # right
-            if s[0] < (MAZE_W - 1) * UNIT:
-                base_action[0] += UNIT
-        elif action == 3:  # left
-            if s[0] > UNIT:
-                base_action[0] -= UNIT
+
+        elif s in self.softWinds:
+            if action == 0:  # up
+                if s[1] > UNIT:
+                    base_action[1] -= UNIT
+            elif action == 1:  # down
+                if s[1] < (MAZE_H - 1) * UNIT:
+                    base_action[1] += UNIT
+            elif action == 2:  # right
+                if s[0] < (MAZE_W - 1) * UNIT:
+                    base_action[0] += UNIT
+            elif action == 3:  # left
+                if s[0] > UNIT:
+                    base_action[0] -= UNIT
+
+            if s[1] + base_action[1] > UNIT:
+                base_action[1] -= UNIT
+
+        else:
+            if action == 0:  # up
+                if s[1] > UNIT:
+                    base_action[1] -= UNIT
+            elif action == 1:  # down
+                if s[1] < (MAZE_H - 1) * UNIT:
+                    base_action[1] += UNIT
+            elif action == 2:  # right
+                if s[0] < (MAZE_W - 1) * UNIT:
+                    base_action[0] += UNIT
+            elif action == 3:  # left
+                if s[0] > UNIT:
+                    base_action[0] -= UNIT
 
         self.canvas.move(self.boat, base_action[0], base_action[1])  # move agent
 
@@ -115,19 +152,11 @@ class Maze(tk.Tk, object):
 
         # reward function
         if s_ == self.canvas.coords(self.goal):
-            reward = 1
+            reward = 1000
             done = True
             print('FOUND!')
             s_ = 'terminal'
             time.sleep(1.5)
-        elif s_ in self.strongWinds:
-            print('STRONG')
-            reward = -1
-            done = False
-        elif s_ in self.softWinds:
-            print("SOFT")
-            reward = -1
-            done = False
         else:
             reward = -1
             done = False
@@ -135,5 +164,5 @@ class Maze(tk.Tk, object):
         return s_, reward, done
 
     def render(self):
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.update()

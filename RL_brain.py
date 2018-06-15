@@ -10,7 +10,7 @@ import pandas as pd
 
 
 class RL(object):
-    def __init__(self, action_space, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
+    def __init__(self, action_space, learning_rate=0.1, reward_decay=0.9, e_greedy=0.1):
         self.actions = action_space  # a list
         self.lr = learning_rate
         self.gamma = reward_decay
@@ -72,7 +72,8 @@ class SarsaTable(RL):
         self.check_state_exist(s_)
         q_predict = self.q_table.loc[s, a]
         if s_ != 'terminal':
-            q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
+            # q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
+            q_target = r + self.q_table.loc[s_, a_]  # next state is not terminal
         else:
             q_target = r  # next state is terminal
         self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
