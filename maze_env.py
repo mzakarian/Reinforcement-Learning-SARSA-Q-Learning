@@ -47,7 +47,7 @@ class Maze(tk.Tk, object):
 
         # create goal
         goal_center = origin + np.array([UNIT * 7, UNIT * 3])
-        self.img1 = tk.PhotoImage(file=r"island.gif")
+        self.img1 = tk.PhotoImage(file=r"goal.gif")
         self.goal = self.canvas.create_image((goal_center[0] - 15, goal_center[1] - 15), anchor=tk.NW, image=self.img1)
 
         # create boat
