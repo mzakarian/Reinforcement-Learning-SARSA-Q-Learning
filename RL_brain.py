@@ -12,7 +12,7 @@ import pandas as pd
 class RL(object):
     def __init__(self, action_space, learning_rate=0.1, reward_decay=0.9, e_greedy=0.1):
         self.actions = action_space  # a list
-        self.lr = learning_rate
+        self.alpha = learning_rate
         self.gamma = reward_decay
         self.epsilon = e_greedy
 
@@ -32,7 +32,7 @@ class RL(object):
     def choose_action(self, observation):
         self.check_state_exist(observation)
         # action selection
-        if np.random.rand() < self.epsilon:
+        if np.random.rand() > self.epsilon:
             # choose best action
             state_action = self.q_table.loc[observation, :]
             state_action = state_action.reindex(
@@ -46,23 +46,10 @@ class RL(object):
     def learn(self, *args):
         pass
 
-
-# off-policy
-class QLearningTable(RL):
-    def __init__(self, actions, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
-        super(QLearningTable, self).__init__(actions, learning_rate, reward_decay, e_greedy)
-
-    def learn(self, s, a, r, s_):
-        self.check_state_exist(s_)
-        q_predict = self.q_table.loc[s, a]
-        if s_ != 'terminal':
-            q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
-        else:
-            q_target = r  # next state is terminal
-        self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
+    def get_list(self):
+        return self.q_table
 
 
-# on-policy
 class SarsaTable(RL):
 
     def __init__(self, actions, learning_rate=0.1, reward_decay=0.9, e_greedy=0.1):
@@ -72,8 +59,7 @@ class SarsaTable(RL):
         self.check_state_exist(s_)
         q_predict = self.q_table.loc[s, a]
         if s_ != 'terminal':
-            # q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
             q_target = r + self.q_table.loc[s_, a_]  # next state is not terminal
         else:
             q_target = r  # next state is terminal
-        self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
+        self.q_table.loc[s, a] += self.alpha * (q_target - q_predict)  # update

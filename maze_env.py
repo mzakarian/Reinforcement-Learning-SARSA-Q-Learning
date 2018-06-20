@@ -16,6 +16,7 @@ from builtins import print
 import numpy as np
 import time
 import tkinter as tk
+import pickle
 
 UNIT = 88  # pixels
 MAZE_H = 7  # grid height
@@ -30,6 +31,20 @@ class Maze(tk.Tk, object):
         self.title('SARSA: Segeln lernen')
         self.geometry('{0}x{1}'.format(MAZE_W * UNIT, MAZE_H * UNIT))
         self._build_maze()
+        self.steps_taken = 0
+        self.generation = 0
+
+    def get_unit(self):
+        return UNIT
+
+    def get_width(self):
+        return MAZE_W
+
+    def get_height(self):
+        return MAZE_H
+
+    def get_winds(self):
+        return self.softWinds, self.strongWinds
 
     def _build_maze(self):
         self.canvas = tk.Canvas(self, height=MAZE_H * UNIT, width=MAZE_W * UNIT, bg="#5CB0C2")
@@ -78,11 +93,18 @@ class Maze(tk.Tk, object):
         self.boat = self.canvas.create_image((boat_center[0] - 15, boat_center[1] - 15), anchor=tk.NW,
                                              image=self.img2)
 
+        with open('softWinds.pickle', 'wb') as handle:
+            pickle.dump(self.softWinds, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open('strongWinds.pickle', 'wb') as handle:
+            pickle.dump(self.strongWinds, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
         # pack all
         self.canvas.pack()
 
     def reset(self):
         self.update()
+        self.steps_taken = 0
         time.sleep(0.5)
         self.canvas.delete(self.boat)
         origin = np.array([20, 20])
@@ -147,16 +169,17 @@ class Maze(tk.Tk, object):
                     base_action[0] -= UNIT
 
         self.canvas.move(self.boat, base_action[0], base_action[1])  # move agent
-
         s_ = self.canvas.coords(self.boat)  # next state
+        self.steps_taken += 1
 
         # reward function
         if s_ == self.canvas.coords(self.goal):
             reward = 1000
             done = True
-            print('FOUND!')
+            self.generation += 1
+            print('END! Episode: ' + str(self.generation) + ' Steps taken --> ' + str(self.steps_taken))
             s_ = 'terminal'
-            time.sleep(1.5)
+            # time.sleep(5)
         else:
             reward = -1
             done = False
@@ -164,5 +187,15 @@ class Maze(tk.Tk, object):
         return s_, reward, done
 
     def render(self):
-        time.sleep(0.01)
+        # time.sleep(5)
         self.update()
+
+    def draw(self, path):
+        time.sleep(3)
+        self.canvas.delete(self.boat)
+
+        for point in path:
+            s = point.replace("[", "").replace("]", "")
+            s = [float(x) for x in s.split(", ")]
+
+            rect = self.canvas.create_rectangle(s[0] - 5, s[1] - 5, s[0] + 88 - 5, s[1] + 88 - 5, fill='green')
