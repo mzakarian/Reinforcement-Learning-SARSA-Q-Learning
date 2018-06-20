@@ -1,11 +1,10 @@
-
 """
 Title:  Learn how to sail with SARSA
 Author: Sven Fritz (sfritz@stud.fra-uas.de)
         Martin Zakarian Khengi (khengi@stud.fra-uas.de)
 """
-from RL_brain import SarsaTable
-from maze_env import Maze
+from sarsa import Sarsa
+from environment import Sea
 import pandas as pd
 import numpy as np
 import pickle
@@ -19,10 +18,10 @@ def scout(df):
     # set start coordinates and environment conditions
     row = get_row(df, '[5.0, 269.0]')
     optimal_path = [row.name]
-    softWinds, strongWinds = env.get_winds()
-    unit = env.get_unit()
-    width = env.get_width()
-    height = env.get_height()
+    softWinds, strongWinds = session.get_winds()
+    unit = session.get_unit()
+    width = session.get_width()
+    height = session.get_height()
 
     # follow the optimal path by tracking the best action by highest QValue
     while True:
@@ -107,23 +106,23 @@ def scout(df):
 def update():
     for episode in range(100):
         # reset environment
-        s1 = env.reset()
+        s1 = session.reset()
 
         # choose action
-        a1 = RL.choose_action(str(s1))
+        a1 = agent.choose_action(str(s1))
 
         while True:
             # refresh canvas
-            env.render()
+            session.render()
 
             # do action and get new state and its reward
-            s2, r, done = env.step(a1)
+            s2, r, done = session.step(a1)
 
             # choose next action based on policy
-            a2 = RL.choose_action(str(s2))
+            a2 = agent.choose_action(str(s2))
 
             # start learning SARSA algorithm
-            RL.learn(str(s1), a1, r, str(s2), a2)
+            agent.learn(str(s1), a1, r, str(s2), a2)
 
             # set new state as root for next iteration
             s1 = s2
@@ -134,11 +133,11 @@ def update():
                 break
 
     # get current QValue list, evaluate it and draw the optimal path
-    result = RL.get_list()
+    result = agent.get_list()
     path = scout(result)
     print(path)
-    env.draw(path)
-    env.render()
+    session.draw(path)
+    session.render()
 
     # export the results
     with open('sarsa.pickle', 'wb') as handle:
@@ -151,12 +150,12 @@ def update():
     result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
 
     input("Press any key to close...")
-    env.destroy()
+    session.destroy()
 
 
 if __name__ == "__main__":
-    env = Maze()
-    RL = SarsaTable(actions=list(range(env.n_actions)))
+    session = Sea()
+    agent = Sarsa(actions=list(range(session.n_actions)))
 
-    env.after(100, update)
-    env.mainloop()
+    session.after(100, update)
+    session.mainloop()

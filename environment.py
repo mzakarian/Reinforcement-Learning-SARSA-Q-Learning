@@ -13,12 +13,12 @@ MAZE_H = 7  # grid height
 MAZE_W = 10  # grid width
 
 
-class Maze(tk.Tk, object):
+class Sea(tk.Tk, object):
     def __init__(self):
-        super(Maze, self).__init__()
+        super(Sea, self).__init__()
         self.action_space = ['u', 'd', 'l', 'r']
         self.n_actions = len(self.action_space)
-        self.title('SARSA: Segeln lernen')
+        self.title('Learn how to sail with SARSA')
         self.geometry('{0}x{1}'.format(MAZE_W * UNIT, MAZE_H * UNIT))
         self._build_maze()
         self.steps_taken = 0
@@ -156,7 +156,7 @@ class Maze(tk.Tk, object):
         s_ = self.canvas.coords(self.boat)  # next state
         self.steps_taken += 1
 
-        # reward function
+        # rewards
         if s_ == self.canvas.coords(self.goal):
             reward = 1000
             done = True
