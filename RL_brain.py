@@ -1,10 +1,9 @@
-"""
-This part of code is the Q learning brain, which is a brain of the agent.
-All decisions are made in here.
 
-View more on my tutorial page: https://morvanzhou.github.io/tutorials/
 """
-
+Title:  Learn how to sail with SARSA
+Author: Sven Fritz (sfritz@stud.fra-uas.de)
+        Martin Zakarian Khengi (khengi@stud.fra-uas.de)
+"""
 import numpy as np
 import pandas as pd
 

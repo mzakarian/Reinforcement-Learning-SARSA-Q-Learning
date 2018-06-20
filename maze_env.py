@@ -1,24 +1,14 @@
+
 """
-Reinforcement learning maze example.
-
-Red rectangle:          explorer.
-Black rectangles:       hells       [reward = -1].
-Yellow bin circle:      paradise    [reward = +1].
-All other states:       ground      [reward = 0].
-
-This script is the environment part of this example.
-The RL is in RL_brain.py.
-
-View more on my tutorial page: https://morvanzhou.github.io/tutorials/
+Title:  Learn how to sail with SARSA
+Author: Sven Fritz (sfritz@stud.fra-uas.de)
+        Martin Zakarian Khengi (khengi@stud.fra-uas.de)
 """
-from builtins import print
-
+import tkinter as tk
 import numpy as np
 import time
-import tkinter as tk
-import pickle
 
-UNIT = 88  # pixels
+UNIT = 88  # sprite size
 MAZE_H = 7  # grid height
 MAZE_W = 10  # grid width
 
@@ -87,17 +77,11 @@ class Maze(tk.Tk, object):
         self.goal = self.canvas.create_image((goal_center[0] - 15, goal_center[1] - 15), anchor=tk.NW,
                                              image=self.img1)
 
-        # create boat
+        # create agent
         boat_center = origin + np.array([0, UNIT * 3])
         self.img2 = tk.PhotoImage(file=r"boat.gif")
         self.boat = self.canvas.create_image((boat_center[0] - 15, boat_center[1] - 15), anchor=tk.NW,
                                              image=self.img2)
-
-        with open('softWinds.pickle', 'wb') as handle:
-            pickle.dump(self.softWinds, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        with open('strongWinds.pickle', 'wb') as handle:
-            pickle.dump(self.strongWinds, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         # pack all
         self.canvas.pack()
@@ -187,7 +171,7 @@ class Maze(tk.Tk, object):
         return s_, reward, done
 
     def render(self):
-        # time.sleep(5)
+        # time.sleep(0.66)
         self.update()
 
     def draw(self, path):
@@ -197,5 +181,4 @@ class Maze(tk.Tk, object):
         for point in path:
             s = point.replace("[", "").replace("]", "")
             s = [float(x) for x in s.split(", ")]
-
-            rect = self.canvas.create_rectangle(s[0] - 5, s[1] - 5, s[0] + 88 - 5, s[1] + 88 - 5, fill='green')
+            self.canvas.create_rectangle(s[0] - 5, s[1] - 5, s[0] + 88 - 5, s[1] + 88 - 5, fill='green')

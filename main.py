@@ -1,36 +1,37 @@
-"""
-Sarsa is a online updating method for Reinforcement learning.
 
-Unlike Q learning which is a offline updating method, Sarsa is updating while in the current trajectory.
-
-You will see the sarsa is more coward when punishment is close because it cares about all behaviours,
-while q learning is more brave because it only cares about maximum behaviour.
 """
-from maze_env import Maze
+Title:  Learn how to sail with SARSA
+Author: Sven Fritz (sfritz@stud.fra-uas.de)
+        Martin Zakarian Khengi (khengi@stud.fra-uas.de)
+"""
 from RL_brain import SarsaTable
+from maze_env import Maze
 import pandas as pd
-import pickle
 import numpy as np
-import time
+import pickle
 
 
-def get_row(dataframe, location):
-    return dataframe.loc[location]
+def get_row(df, location):
+    return df.loc[location]
 
 
-def scout(dataframe):
-    row = get_row(dataframe, '[5.0, 269.0]')
-    path = [row.name]
+def scout(df):
+    # set start coordinates and environment conditions
+    row = get_row(df, '[5.0, 269.0]')
+    optimal_path = [row.name]
     softWinds, strongWinds = env.get_winds()
     unit = env.get_unit()
     width = env.get_width()
     height = env.get_height()
 
+    # follow the optimal path by tracking the best action by highest QValue
     while True:
-        state_action = dataframe.loc[row.name, :]
-        state_action = state_action.reindex(np.random.permutation(state_action.index))  # some actions have same value
+        # select best action
+        state_action = df.loc[row.name, :]
+        state_action = state_action.reindex(np.random.permutation(state_action.index))
         action = state_action.idxmax()
 
+        # take action
         s = row.name.replace("[", "").replace("]", "")
         s = [float(x) for x in s.split(", ")]
         base_action = np.array([0, 0])
@@ -84,68 +85,70 @@ def scout(dataframe):
                 if s[0] > unit:
                     base_action[0] -= unit
 
+        # formatting the coordinates
         np.set_printoptions(formatter={'float': lambda x: "{0:0.1f}".format(x)})
         new = np.array([(base_action[0] + float(s[0])), (base_action[1] + float(s[1]))])
         new = np.array2string(new, separator=', ')
-
         print('From ' + row.name + ' to ' + new + ' moving ' + str(action) + " with " + str(base_action))
 
+        # break when goal is reached
         if new == '[621.0, 269.0]':
-            path.append(new)
+            optimal_path.append(new)
             print('PATH COMPLETED')
             break
 
-        row = get_row(dataframe, new)
-        path.append(row.name)
+        # add coordinates to optimal path
+        row = get_row(df, new)
+        optimal_path.append(row.name)
 
-    # print(path)
-    return path
+    return optimal_path
 
 
 def update():
     for episode in range(100):
-        # initial observation
+        # reset environment
         s1 = env.reset()
 
-        # RL choose action based on observation
+        # choose action
         a1 = RL.choose_action(str(s1))
 
         while True:
-            # fresh env
+            # refresh canvas
             env.render()
 
-            # RL take action and get next observation and reward
+            # do action and get new state and its reward
             s2, r, done = env.step(a1)
 
-            # RL choose action based on next observation
+            # choose next action based on policy
             a2 = RL.choose_action(str(s2))
 
-            # RL learn from this transition (s, a, r, s, a) ==> Sarsa
+            # start learning SARSA algorithm
             RL.learn(str(s1), a1, r, str(s2), a2)
 
-            # swap observation and action
+            # set new state as root for next iteration
             s1 = s2
             a1 = a2
 
-            # break while loop when end of this episode
+            # break loop when terminal state is reached
             if done:
                 break
 
-    # end of game
+    # get current QValue list, evaluate it and draw the optimal path
     result = RL.get_list()
     path = scout(result)
     print(path)
     env.draw(path)
     env.render()
 
-    # with open('sarsa.pickle', 'wb') as handle:
-    #     pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    #
-    # result.columns = ['Up', 'Down', 'Right', 'Left']
-    #
-    # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    #     print(result)
-    # result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
+    # export the results
+    with open('sarsa.pickle', 'wb') as handle:
+        pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    result.columns = ['Up', 'Down', 'Right', 'Left']
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(result)
+    result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
 
     input("Press any key to close...")
     env.destroy()
