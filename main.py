@@ -155,11 +155,8 @@ def update():
     # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
     #     print(result)
     #
-    # result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
-    # telemetry.to_csv('telemetry.csv', sep='\t', encoding='utf-8')
-
-    input("Press 'Enter' to close...")
-    session.destroy()
+    # result.to_csv('sarsa.csv', sep=';', encoding='utf-8')
+    # telemetry.to_csv('telemetry.csv', sep=';', encoding='utf-8')
 
 
 if __name__ == "__main__":

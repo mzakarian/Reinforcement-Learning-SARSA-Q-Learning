@@ -1,4 +1,3 @@
-
 """
 Title:  Learn how to sail with SARSA
 Author: Sven Fritz (sfritz@stud.fra-uas.de)
