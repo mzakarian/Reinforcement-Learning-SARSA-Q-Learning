@@ -3,8 +3,9 @@ Title:  Learn how to sail with SARSA
 Author: Sven Fritz (sfritz@stud.fra-uas.de)
         Martin Zakarian Khengi (khengi@stud.fra-uas.de)
 """
-from sarsa import Sarsa
+import matplotlib.pyplot as plt
 from environment import Sea
+from sarsa import Sarsa
 import pandas as pd
 import numpy as np
 import pickle
@@ -12,6 +13,11 @@ import pickle
 
 def get_row(df, location):
     return df.loc[location]
+
+
+def plot(df):
+    df.plot(style='.-', marker='o', markevery=10, markerfacecolor='black')
+    plt.show()
 
 
 def scout(df):
@@ -90,7 +96,7 @@ def scout(df):
         new = np.array2string(new, separator=', ')
         print('From ' + row.name + ' to ' + new + ' moving ' + str(action) + " with " + str(base_action))
 
-        # break when goal is reached
+        # break loop when goal is reached
         if new == '[621.0, 269.0]':
             optimal_path.append(new)
             print('PATH COMPLETED')
@@ -138,18 +144,21 @@ def update():
     print(path)
     session.draw(path)
     session.render()
+    plot(session.get_telemetry())
 
-    # export the results
-    with open('sarsa.pickle', 'wb') as handle:
-        pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # EXPORT TO FILE
+    # with open('sarsa.pickle', 'wb') as handle:
+    #     pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #
+    # result.columns = ['Up', 'Down', 'Right', 'Left']
+    #
+    # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+    #     print(result)
+    #
+    # result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
+    # telemetry.to_csv('telemetry.csv', sep='\t', encoding='utf-8')
 
-    result.columns = ['Up', 'Down', 'Right', 'Left']
-
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        print(result)
-    result.to_csv('sarsa.csv', sep='\t', encoding='utf-8')
-
-    input("Press any key to close...")
+    input("Press 'Enter' to close...")
     session.destroy()
 
 

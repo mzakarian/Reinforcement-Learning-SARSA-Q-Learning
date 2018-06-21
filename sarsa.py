@@ -8,11 +8,11 @@ import pandas as pd
 
 
 class RL(object):
-    def __init__(self, action_space, learning_rate=0.1, reward_decay=0.9, e_greedy=0.1):
-        self.actions = action_space  # a list
-        self.alpha = learning_rate
-        self.gamma = reward_decay
-        self.epsilon = e_greedy
+    def __init__(self, action_space, alpha=0.1, gamma=0.9, epsilon=0.1):
+        self.actions = action_space  # list of actions
+        self.alpha = alpha  # learn rate
+        self.gamma = gamma  # discount
+        self.epsilon = epsilon  # e-greedy policy
 
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
 
@@ -50,14 +50,14 @@ class RL(object):
 
 class Sarsa(RL):
 
-    def __init__(self, actions, learning_rate=0.1, reward_decay=0.9, e_greedy=0.1):
-        super(Sarsa, self).__init__(actions, learning_rate, reward_decay, e_greedy)
+    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.1):
+        super(Sarsa, self).__init__(actions, alpha, gamma, epsilon)
 
     def learn(self, s, a, r, s_, a_):
         self.check_state_exist(s_)
         q_predict = self.q_table.loc[s, a]
         if s_ != 'terminal':
-            q_target = r + self.q_table.loc[s_, a_]  # next state is not terminal
+            q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
         else:
             q_target = r  # next state is terminal
         self.q_table.loc[s, a] += self.alpha * (q_target - q_predict)  # update

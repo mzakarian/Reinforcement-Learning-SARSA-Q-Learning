@@ -5,6 +5,7 @@ Author: Sven Fritz (sfritz@stud.fra-uas.de)
         Martin Zakarian Khengi (khengi@stud.fra-uas.de)
 """
 import tkinter as tk
+import pandas as pd
 import numpy as np
 import time
 
@@ -23,6 +24,7 @@ class Sea(tk.Tk, object):
         self._build_maze()
         self.steps_taken = 0
         self.generation = 0
+        self.telemetrics = pd.DataFrame(columns=['Steps'])
 
     def get_unit(self):
         return UNIT
@@ -35,6 +37,9 @@ class Sea(tk.Tk, object):
 
     def get_winds(self):
         return self.softWinds, self.strongWinds
+
+    def get_telemetry(self):
+        return self.telemetrics
 
     def _build_maze(self):
         self.canvas = tk.Canvas(self, height=MAZE_H * UNIT, width=MAZE_W * UNIT, bg="#5CB0C2")
@@ -152,16 +157,17 @@ class Sea(tk.Tk, object):
                 if s[0] > UNIT:
                     base_action[0] -= UNIT
 
-        self.canvas.move(self.boat, base_action[0], base_action[1])  # move agent
-        s_ = self.canvas.coords(self.boat)  # next state
+        self.canvas.move(self.boat, base_action[0], base_action[1])
+        s_ = self.canvas.coords(self.boat)
         self.steps_taken += 1
 
         # rewards
         if s_ == self.canvas.coords(self.goal):
             reward = 1000
             done = True
+            self.telemetrics.loc[self.generation] = [self.steps_taken]
             self.generation += 1
-            print('END! Episode: ' + str(self.generation) + ' Steps taken --> ' + str(self.steps_taken))
+            print('Episode: ' + str(self.generation) + ' Steps taken --> ' + str(self.steps_taken))
             s_ = 'terminal'
             # time.sleep(5)
         else:
