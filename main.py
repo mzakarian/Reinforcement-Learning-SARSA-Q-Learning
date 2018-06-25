@@ -110,7 +110,7 @@ def scout(df):
 
 
 def update():
-    for episode in range(100):
+    for episode in range(5000):
         # reset environment
         s1 = session.reset()
 
@@ -147,16 +147,16 @@ def update():
     plot(session.get_telemetry())
 
     # EXPORT TO FILE
-    # with open('sarsa.pickle', 'wb') as handle:
-    #     pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    #
-    # result.columns = ['Up', 'Down', 'Right', 'Left']
-    #
-    # with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-    #     print(result)
-    #
-    # result.to_csv('sarsa.csv', sep=';', encoding='utf-8')
-    # telemetry.to_csv('telemetry.csv', sep=';', encoding='utf-8')
+    with open('sarsa.pickle', 'wb') as handle:
+        pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    result.columns = ['Up', 'Down', 'Right', 'Left']
+
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(result)
+
+    result.to_csv('sarsa.csv', sep=';', encoding='utf-8')
+    session.get_telemetry().to_csv('telemetry.csv', sep=';', encoding='utf-8')
 
 
 if __name__ == "__main__":
