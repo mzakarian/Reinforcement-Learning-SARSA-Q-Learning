@@ -56,7 +56,7 @@ class Sarsa(RL):
     def learn(self, s, a, r, s_, a_):
         self.check_state_exist(s_)
         q_predict = self.q_table.loc[s, a]
-        if s_ != 'terminal':
+        if s_ != 'goal':
             q_target = r + self.gamma * self.q_table.loc[s_, a_]  # next state is not terminal
         else:
             q_target = r  # next state is terminal

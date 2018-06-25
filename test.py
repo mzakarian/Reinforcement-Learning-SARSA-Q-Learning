@@ -126,11 +126,19 @@
 #
 # tk.mainloop()
 #
+#
+# import pandas as pd
+# import matplotlib.pyplot as plt
+#
+# df1 = pd.read_csv("telemetry.csv", sep='\t')
+# df1.plot(style='.-', marker='o', markevery=10, markerfacecolor='black')
+#
+# plt.show()
+#
+# import random
+#
+# print(random.randint(1, 3))
 
-import pandas as pd
-import matplotlib.pyplot as plt
-
-df1 = pd.read_csv("telemetry.csv", sep='\t')
-df1.plot(style='.-', marker='o', markevery=10, markerfacecolor='black')
-
-plt.show()
+import numpy
+test = numpy.random.choice(numpy.arange(1, 4), p=[(1/3), (1/3), (1/3)])
+print(test)

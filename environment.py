@@ -14,9 +14,14 @@ MAZE_W = 10  # grid width
 
 
 class Sea(tk.Tk, object):
-    def __init__(self):
+    def __init__(self, action_set='normal', is_stoachstic=False):
         super(Sea, self).__init__()
-        self.action_space = ['u', 'd', 'l', 'r']
+        if action_set == 'normal':
+            self.action_space = ['u', 'd', 'l', 'r']
+        elif action_set == 'advanced':
+            self.action_space = ['u', 'd', 'l', 'r', 'ur', 'ul', 'dr', 'dl']
+        elif action_set == 'advanced_plus':
+            self.action_space = ['u', 'd', 'l', 'r', 'ur', 'ul', 'dr', 'dl', 'stay']
         self.n_actions = len(self.action_space)
         self.title('Learn how to sail with SARSA')
         self.geometry('{0}x{1}'.format(MAZE_W * UNIT, MAZE_H * UNIT))
@@ -24,6 +29,7 @@ class Sea(tk.Tk, object):
         self.steps_taken = 0
         self.generation = 0
         self.telemetrics = pd.DataFrame(columns=['Steps'])
+        self.stochastic = is_stoachstic
 
     def get_unit(self):
         return UNIT
@@ -106,68 +112,73 @@ class Sea(tk.Tk, object):
     def step(self, action):
         s = self.canvas.coords(self.boat)
         base_action = np.array([0, 0])
-        if s in self.strongWinds:
-            if action == 0:  # up
-                if s[1] > UNIT:
-                    base_action[1] -= UNIT
-            elif action == 1:  # down
-                if s[1] < (MAZE_H - 1) * UNIT:
-                    base_action[1] += UNIT
-            elif action == 2:  # right
-                if s[0] < (MAZE_W - 1) * UNIT:
-                    base_action[0] += UNIT
-            elif action == 3:  # left
-                if s[0] > UNIT:
-                    base_action[0] -= UNIT
 
-            if s[1] + base_action[1] > UNIT * 2:
-                base_action[1] -= UNIT * 2
-            elif s[1] + base_action[1] > UNIT:
+        # Basic Movement
+        if action == 0 or action == 4 or action == 5:  # u, ur, ul
+            if s[1] > UNIT:
                 base_action[1] -= UNIT
+        if action == 1 or action == 6 or action == 7:  # d, dr, dl
+            if s[1] < (MAZE_H - 1) * UNIT:
+                base_action[1] += UNIT
+        if action == 2 or action == 4 or action == 6:  # r, ur, dr
+            if s[0] < (MAZE_W - 1) * UNIT:
+                base_action[0] += UNIT
+        if action == 3 or action == 5 or action == 7:  # l, ul, ul
+            if s[0] > UNIT:
+                base_action[0] -= UNIT
+        if action == 'stay':
+            pass
+
+        # Movement due Winds
+        if s in self.strongWinds:
+            if self.stochastic:
+                temp = np.random.choice(np.arange(1, 4), p=[(1 / 3), (1 / 3), (1 / 3)])
+                if temp == 1:
+                    if s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
+                elif temp == 2:
+                    if s[1] + base_action[1] > UNIT * 2:
+                        base_action[1] -= UNIT * 2
+                    elif s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
+                elif temp == 3:
+                    pass
+            else:
+                if s[1] + base_action[1] > UNIT * 2:
+                    base_action[1] -= UNIT * 2
+                elif s[1] + base_action[1] > UNIT:
+                    base_action[1] -= UNIT
 
         elif s in self.softWinds:
-            if action == 0:  # up
-                if s[1] > UNIT:
+            if self.stochastic:
+                temp = np.random.choice(np.arange(1, 4), p=[(1 / 3), (1 / 3), (1 / 3)])
+                if temp == 1:
+                    if s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
+                elif temp == 2:
+                    if s[1] + base_action[1] > UNIT * 2:
+                        base_action[1] -= UNIT * 2
+                    elif s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
+                elif temp == 3:
+                    pass
+            else:
+                if s[1] + base_action[1] > UNIT:
                     base_action[1] -= UNIT
-            elif action == 1:  # down
-                if s[1] < (MAZE_H - 1) * UNIT:
-                    base_action[1] += UNIT
-            elif action == 2:  # right
-                if s[0] < (MAZE_W - 1) * UNIT:
-                    base_action[0] += UNIT
-            elif action == 3:  # left
-                if s[0] > UNIT:
-                    base_action[0] -= UNIT
 
-            if s[1] + base_action[1] > UNIT:
-                base_action[1] -= UNIT
-
-        else:
-            if action == 0:  # up
-                if s[1] > UNIT:
-                    base_action[1] -= UNIT
-            elif action == 1:  # down
-                if s[1] < (MAZE_H - 1) * UNIT:
-                    base_action[1] += UNIT
-            elif action == 2:  # right
-                if s[0] < (MAZE_W - 1) * UNIT:
-                    base_action[0] += UNIT
-            elif action == 3:  # left
-                if s[0] > UNIT:
-                    base_action[0] -= UNIT
-
+        # actual moving
         self.canvas.move(self.boat, base_action[0], base_action[1])
         s_ = self.canvas.coords(self.boat)
         self.steps_taken += 1
 
         # rewards
         if s_ == self.canvas.coords(self.goal):
-            reward = 1000
+            reward = 1
             done = True
             self.telemetrics.loc[self.generation] = [self.steps_taken]
             self.generation += 1
             print('Episode: ' + str(self.generation) + ' Steps taken --> ' + str(self.steps_taken))
-            s_ = 'terminal'
+            s_ = 'goal'
             # time.sleep(5)
         else:
             reward = -1
