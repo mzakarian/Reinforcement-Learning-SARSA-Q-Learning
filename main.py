@@ -11,6 +11,8 @@ import numpy as np
 import pickle
 import time
 
+rewards = pd.DataFrame(columns=['Rewards'])
+
 
 def get_row(df, location):
     return df.loc[location]
@@ -86,7 +88,8 @@ def scout(df):
 
 
 def update(interim=True):
-    for episode in range(5000):
+    for episode in range(100):
+        counter = 0
         # reset environment
         s1 = session.reset()
 
@@ -108,6 +111,7 @@ def update(interim=True):
 
             # start learning SARSA algorithm
             agent.learn(str(s1), a1, r, str(s2), a2)
+            counter += agent.get_value(str(s1), a1)
 
             # set new state as root for next iteration
             s1 = s2
@@ -119,6 +123,8 @@ def update(interim=True):
 
         if episode < 10:
             time.sleep(2)
+
+        rewards.loc[episode] = [counter]
 
     # get current QValue list, evaluate it and draw the optimal path
     result = agent.get_list()
@@ -132,7 +138,9 @@ def update(interim=True):
     input("Press Enter to show heatmap...")
     session.draw_heatmap()
     session.render()
+    # plotting
     plot(session.get_telemetry())
+    plot(rewards)
 
     # EXPORT TO FILE
     with open('sarsa.pickle', 'wb') as handle:
@@ -146,7 +154,7 @@ def update(interim=True):
 
 
 if __name__ == "__main__":
-    session = Sea(action_set='advanced', is_stoachstic=False)
+    session = Sea(action_set='normal', is_stoachstic=False)
     agent = Sarsa(actions=list(range(session.n_actions)))
 
     session.after(100, update(interim=False))

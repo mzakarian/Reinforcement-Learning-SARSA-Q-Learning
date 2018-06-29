@@ -47,10 +47,13 @@ class RL(object):
     def get_list(self):
         return self.q_table
 
+    def get_value(self, s, a):
+        return self.q_table.loc[s, a]
+
 
 class Sarsa(RL):
 
-    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.3):
+    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.1):
         super(Sarsa, self).__init__(actions, alpha, gamma, epsilon)
 
     def learn(self, s, a, r, s_, a_):
