@@ -9,6 +9,7 @@ from sarsa import Sarsa
 import pandas as pd
 import numpy as np
 import pickle
+import time
 
 
 def get_row(df, location):
@@ -84,10 +85,13 @@ def scout(df):
     return optimal_path
 
 
-def update():
-    for episode in range(100):
+def update(interim=True):
+    for episode in range(5000):
         # reset environment
         s1 = session.reset()
+
+        if interim:
+            session.draw_paths(agent.get_list())
 
         # choose action
         a1 = agent.choose_action(str(s1))
@@ -113,11 +117,20 @@ def update():
             if done:
                 break
 
+        if episode < 10:
+            time.sleep(2)
+
     # get current QValue list, evaluate it and draw the optimal path
     result = agent.get_list()
     path = scout(result)
     print(path)
-    session.draw(path)
+    session.draw_paths(result)
+    session.render()
+    input("Press Enter to show paths...")
+    session.draw_optimal_path(path)
+    session.render()
+    input("Press Enter to show heatmap...")
+    session.draw_heatmap()
     session.render()
     plot(session.get_telemetry())
 
@@ -133,8 +146,8 @@ def update():
 
 
 if __name__ == "__main__":
-    session = Sea(action_set='advanced_plus', is_stoachstic=False)
+    session = Sea(action_set='advanced', is_stoachstic=False)
     agent = Sarsa(actions=list(range(session.n_actions)))
 
-    session.after(100, update)
+    session.after(100, update(interim=False))
     session.mainloop()

@@ -28,8 +28,16 @@ class Sea(tk.Tk, object):
         self._build_maze()
         self.steps_taken = 0
         self.generation = 0
+        self.lines = []
         self.telemetrics = pd.DataFrame(columns=['Steps'])
         self.stochastic = is_stoachstic
+        self.heat_map = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
 
     def get_unit(self):
         return UNIT
@@ -113,6 +121,8 @@ class Sea(tk.Tk, object):
         s = self.canvas.coords(self.boat)
         base_action = np.array([0, 0])
 
+        self.heat_map[int((s[1] - 5) / 88)][int((s[0] - 5) / 88)] += 1
+
         # Basic Movement
         if action == 0 or action == 4 or action == 5:  # u, ur, ul
             if s[1] > UNIT:
@@ -134,7 +144,11 @@ class Sea(tk.Tk, object):
             if self.stochastic:
                 temp = np.random.choice(np.arange(1, 4), p=[(1 / 3), (1 / 3), (1 / 3)])
                 if temp == 1:
-                    if s[1] + base_action[1] > UNIT:
+                    if s[1] + base_action[1] > UNIT * 3:
+                        base_action[1] -= UNIT * 3
+                    elif s[1] + base_action[1] > UNIT * 2:
+                        base_action[1] -= UNIT * 2
+                    elif s[1] + base_action[1] > UNIT:
                         base_action[1] -= UNIT
                 elif temp == 2:
                     if s[1] + base_action[1] > UNIT * 2:
@@ -142,7 +156,8 @@ class Sea(tk.Tk, object):
                     elif s[1] + base_action[1] > UNIT:
                         base_action[1] -= UNIT
                 elif temp == 3:
-                    pass
+                    if s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
             else:
                 if s[1] + base_action[1] > UNIT * 2:
                     base_action[1] -= UNIT * 2
@@ -173,11 +188,12 @@ class Sea(tk.Tk, object):
 
         # rewards
         if s_ == self.canvas.coords(self.goal):
-            reward = 1
+            reward = 1000
             done = True
             self.telemetrics.loc[self.generation] = [self.steps_taken]
             self.generation += 1
             print('Episode: ' + str(self.generation) + ' Steps taken --> ' + str(self.steps_taken))
+            self.heat_map[int((s_[1] - 5) / 88)][int((s_[0] - 5) / 88)] += 1
             s_ = 'goal'
             # time.sleep(5)
         else:
@@ -190,7 +206,7 @@ class Sea(tk.Tk, object):
         # time.sleep(0.66)
         self.update()
 
-    def draw(self, path):
+    def draw_optimal_path(self, path):
         time.sleep(3)
         self.canvas.delete(self.boat)
 
@@ -198,3 +214,102 @@ class Sea(tk.Tk, object):
             s = point.replace("[", "").replace("]", "")
             s = [float(x) for x in s.split(", ")]
             self.canvas.create_rectangle(s[0] - 5, s[1] - 5, s[0] + 88 - 5, s[1] + 88 - 5, fill='green')
+
+    def pseudocolor(self, value, minval, maxval, palette):
+        """ Maps given value to a linearly interpolated palette color. """
+        max_index = len(palette) - 1
+        # Convert value in range minval...maxval to the range 0..max_index.
+        v = (float(value - minval) / (maxval - minval)) * max_index
+        i = int(v)
+        f = v - i  # Split into integer and fractional portions.
+        c0r, c0g, c0b = palette[i]
+        c1r, c1g, c1b = palette[min(i + 1, max_index)]
+        dr, dg, db = c1r - c0r, c1g - c0g, c1b - c0b
+        return c0r + (f * dr), c0g + (f * dg), c0b + (f * db)  # Linear interpolation.
+
+    def colorize(self, value, minval, maxval, palette):
+        """ Convert value to heatmap color and convert it to tkinter color. """
+        color = (int(c * 255) for c in self.pseudocolor(value, minval, maxval, palette))
+        return '#{:02x}{:02x}{:02x}'.format(*color)  # Convert to hex string.
+
+    def draw_heatmap(self):
+        print(self.heat_map)
+
+        heat_min = min(min(row) for row in self.heat_map)
+        heat_max = max(max(row) for row in self.heat_map)
+
+        # Heatmap rgb colors in mapping order (ascending).
+        palette = (0, 0, 1), (0, .5, 0), (0, 1, 0), (1, .5, 0), (1, 0, 0)
+
+        for y, row in enumerate(self.heat_map):
+            for x, temp in enumerate(row):
+                x0, y0 = x * UNIT, y * UNIT
+                x1, y1 = x0 + UNIT, y0 + UNIT
+                color = self.colorize(temp, heat_min, heat_max, palette)
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill=color, width=0)
+
+        origin = np.array([20, 20])
+        # create goal
+        goal_center = origin + np.array([UNIT * 7, UNIT * 3])
+        self.img1 = tk.PhotoImage(file=r"goal.gif")
+        self.goal = self.canvas.create_image((goal_center[0] - 15, goal_center[1] - 15), anchor=tk.NW,
+                                             image=self.img1)
+
+        # create agent
+        boat_center = origin + np.array([0, UNIT * 3])
+        self.img2 = tk.PhotoImage(file=r"boat.gif")
+        self.boat = self.canvas.create_image((boat_center[0] - 15, boat_center[1] - 15), anchor=tk.NW,
+                                             image=self.img2)
+
+    def draw_paths(self, df):
+        self.reset()
+        center = UNIT / 2
+
+        for line in self.lines:
+            self.canvas.delete(line)
+
+        for index, row in df.iterrows():
+            state_action = df.loc[row.name, :]
+            state_action = state_action.reindex(np.random.permutation(state_action.index))
+            action = state_action.idxmax()
+
+            if not row.name == 'goal':
+                s = row.name.replace("[", "").replace("]", "")
+                s = [float(x) for x in s.split(", ")]
+            else:
+                continue
+
+            if action == 0:  # up
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], center + s[0], 0 + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 1:  # down
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], center + s[0], UNIT + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 2:  # right
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], UNIT + s[0], center + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 3:  # left
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], 0 + s[0], center + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 4:  # up right
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], UNIT + s[0], 0 + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 5:  # up left
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], 0 + s[0], 0 + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 6:  # down right
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], UNIT + s[0], UNIT + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 7:  # down left
+                self.lines.append(
+                    self.canvas.create_line(center + s[0], center + s[1], 0 + s[0], UNIT + s[1], tags=("line",),
+                                            arrow="last", width=5))
+            elif action == 8:  # nothing
+                self.lines.append(self.canvas.create_rectangle(center + s[0], center + s[1], 20, fill="black"))

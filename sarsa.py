@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class RL(object):
-    def __init__(self, action_space, alpha=0.1, gamma=0.9, epsilon=0.1):
+    def __init__(self, action_space, alpha=0.1, gamma=0.9, epsilon=0.3):
         self.actions = action_space  # list of actions
         self.alpha = alpha  # learn rate
         self.gamma = gamma  # discount
@@ -50,7 +50,7 @@ class RL(object):
 
 class Sarsa(RL):
 
-    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.1):
+    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.3):
         super(Sarsa, self).__init__(actions, alpha, gamma, epsilon)
 
     def learn(self, s, a, r, s_, a_):

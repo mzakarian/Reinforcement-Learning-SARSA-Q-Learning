@@ -138,7 +138,65 @@
 # import random
 #
 # print(random.randint(1, 3))
+#
+# import numpy
+# test = numpy.random.choice(numpy.arange(1, 4), p=[(1/3), (1/3), (1/3)])
+# print(test)
 
-import numpy
-test = numpy.random.choice(numpy.arange(1, 4), p=[(1/3), (1/3), (1/3)])
-print(test)
+from tkinter import *  # Python 3
+
+heat_map = [[0, 1, 2, 0, 0, 0, 0, 0, 0, 0],
+            [3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+heat_min = min(min(row) for row in heat_map)
+heat_max = max(max(row) for row in heat_map)
+
+# Heatmap rgb colors in mapping order (ascending).
+palette = (0, 0, 1), (0, .5, 0), (0, 1, 0), (1, .5, 0), (1, 0, 0)
+
+
+def pseudocolor(value, minval, maxval, palette):
+    """ Maps given value to a linearly interpolated palette color. """
+    max_index = len(palette) - 1
+    # Convert value in range minval...maxval to the range 0..max_index.
+    v = (float(value - minval) / (maxval - minval)) * max_index
+    i = int(v);
+    f = v - i  # Split into integer and fractional portions.
+    c0r, c0g, c0b = palette[i]
+    c1r, c1g, c1b = palette[min(i + 1, max_index)]
+    dr, dg, db = c1r - c0r, c1g - c0g, c1b - c0b
+    return c0r + (f * dr), c0g + (f * dg), c0b + (f * db)  # Linear interpolation.
+
+
+def colorize(value, minval, maxval, palette):
+    """ Convert value to heatmap color and convert it to tkinter color. """
+    color = (int(c * 255) for c in pseudocolor(value, minval, maxval, palette))
+    return '#{:02x}{:02x}{:02x}'.format(*color)  # Convert to hex string.
+
+
+root = Tk()
+root.title('Heatmap')
+
+# Create and fill canvas with rectangular cells.
+width, height = 400, 400  # Canvas size.
+rows, cols = len(heat_map), len(heat_map[0])
+rect_width, rect_height = width // rows, height // cols
+border = 1  # Pixel width of border around each.
+
+print(heat_map[0][2])
+
+canvas = Canvas(root, width=width, height=height)
+canvas.pack()
+for y, row in enumerate(heat_map):
+    for x, temp in enumerate(row):
+        x0, y0 = x * rect_width, y * rect_height
+        x1, y1 = x0 + rect_width - border, y0 + rect_height - border
+        color = colorize(temp, heat_min, heat_max, palette)
+        canvas.create_rectangle(x0, y0, x1, y1, fill=color, width=0)
+
+root.mainloop()
