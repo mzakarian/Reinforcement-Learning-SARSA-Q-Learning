@@ -5,7 +5,7 @@ Author: Sven Fritz (sfritz@stud.fra-uas.de)
 """
 import matplotlib.pyplot as plt
 from environment import Sea
-from sarsa import Sarsa
+from reinforcement_learning import Sarsa
 import pandas as pd
 import numpy as np
 import pickle
@@ -85,18 +85,21 @@ def scout(df):
     return optimal_path
 
 
-def update(show_steps=True, train=True, save=True):
+def update(episodes=100, show_steps=True, train=True, save=True):
     if train:
         rewards = pd.DataFrame(columns=['Rewards'])
-        for episode in range(100):
-            counter = 0
+        for episode in range(episodes):
+            reward_counter = 0
+
+            if show_steps and 1 <= episode < episodes * 0.1:
+                # draw QValue updates
+                session.draw_paths(agent.get_list())
+                time.sleep(1)
+
             # reset environment
             s1 = session.reset()
 
-            if show_steps:
-                session.draw_paths(agent.get_list())
-
-            # choose action
+            # choose action based on policy
             a1 = agent.choose_action(str(s1))
 
             while True:
@@ -106,12 +109,12 @@ def update(show_steps=True, train=True, save=True):
                 # do action and get new state and its reward
                 s2, r, done = session.step(a1)
 
-                # choose next action based on policy
+                # choose action based on policy
                 a2 = agent.choose_action(str(s2))
 
                 # start learning SARSA algorithm
                 agent.learn(str(s1), a1, r, str(s2), a2)
-                counter += agent.get_value(str(s1), a1)
+                reward_counter += agent.get_value(str(s1), a1)
 
                 # set new state as root for next iteration
                 s1 = s2
@@ -121,17 +124,14 @@ def update(show_steps=True, train=True, save=True):
                 if done:
                     break
 
-            if episode < 10:
-                time.sleep(2)
+            rewards.loc[episode] = [reward_counter]
 
-            rewards.loc[episode] = [counter]
-
-        # get current QValue list
+        # get current data
         result = agent.get_list()
         heatmap = session.get_heatmap()
         telemetry = session.get_telemetry()
     else:
-        # load all data
+        # load saved data
         with open('data/sarsa.pickle', 'rb') as handle:
             result = pickle.load(handle)
         with open('data/heatmap.pickle', 'rb') as handle:
@@ -142,13 +142,12 @@ def update(show_steps=True, train=True, save=True):
             rewards = pickle.load(handle)
 
     # evaluate data and do some cool stuff
-
-    # track the optimal path
+    # scout the optimal path
     print('Showing best action for each state')
     session.draw_paths(result)
     session.render()
 
-    # show best actions for all states
+    # show best actions for every state
     input("Press Enter to show optimal path...")
     session.reset()
     path = scout(result)
@@ -162,10 +161,10 @@ def update(show_steps=True, train=True, save=True):
     session.render()
 
     # plot rewards/episode and steps/episode
-    plot(telemetry)
     plot(rewards)
+    plot(telemetry)
 
-    # EXPORT TO FILES
+    # export data to files
     if train and save:
         with open('data/sarsa.pickle', 'wb') as handle:
             pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -188,5 +187,5 @@ if __name__ == "__main__":
     session = Sea(action_set='normal', is_stoachstic=False)
     agent = Sarsa(actions=list(range(session.n_actions)))
 
-    session.after(100, update(show_steps=False, train=False, save=True))
+    session.after(100, update(episodes=100, show_steps=True, train=True, save=False))
     session.mainloop()

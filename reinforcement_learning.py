@@ -51,6 +51,21 @@ class RL(object):
         return self.q_table.loc[s, a]
 
 
+# off-policy
+class QLearningTable(RL):
+    def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.1):
+        super(QLearningTable, self).__init__(actions, alpha, gamma, epsilon)
+
+    def learn(self, s, a, r, s_):
+        self.check_state_exist(s_)
+        q_predict = self.q_table.loc[s, a]
+        if s_ != 'goal':
+            q_target = r + self.gamma * self.q_table.loc[s_, :].max()  # next state is not terminal
+        else:
+            q_target = r  # next state is terminal
+        self.q_table.loc[s, a] += self.lr * (q_target - q_predict)  # update
+
+
 class Sarsa(RL):
 
     def __init__(self, actions, alpha=0.1, gamma=1, epsilon=0.1):

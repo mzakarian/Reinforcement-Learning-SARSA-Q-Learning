@@ -183,6 +183,14 @@ class Sea(tk.Tk, object):
             else:
                 if s[1] + base_action[1] > UNIT:
                     base_action[1] -= UNIT
+        else:
+            if self.stochastic:
+                temp = np.random.choice(np.arange(1, 3), p=[(1 / 3), (2 / 3)])
+                if temp == 1:
+                    if s[1] + base_action[1] > UNIT:
+                        base_action[1] -= UNIT
+                elif temp == 2:
+                    pass
 
         # actual moving
         self.canvas.move(self.boat, base_action[0], base_action[1])
