@@ -58,3 +58,8 @@ docs/_build/
 target/
 
 \.idea/
+
+# custom
+*.xml
+codestyles/
+_windows/
