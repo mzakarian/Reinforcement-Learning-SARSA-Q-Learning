@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class RL(object):
-    def __init__(self, action_space, alpha=0.1, gamma=0.9, epsilon=0.3):
+    def __init__(self, action_space, alpha=0.1, gamma=0.9, epsilon=0.1):
         self.actions = action_space  # list of actions
         self.alpha = alpha  # learn rate
         self.gamma = gamma  # discount

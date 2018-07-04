@@ -9,8 +9,8 @@ import numpy as np
 import time
 
 UNIT = 88  # sprite size
-MAZE_H = 7  # grid height
-MAZE_W = 10  # grid width
+SEA_H = 7  # grid height
+SEA_W = 10  # grid width
 
 
 class Sea(tk.Tk, object):
@@ -24,8 +24,8 @@ class Sea(tk.Tk, object):
             self.action_space = ['u', 'd', 'l', 'r', 'ur', 'ul', 'dr', 'dl', 'stay']
         self.n_actions = len(self.action_space)
         self.title('Learn how to sail with SARSA')
-        self.geometry('{0}x{1}'.format(MAZE_W * UNIT, MAZE_H * UNIT))
-        self._build_maze()
+        self.geometry('{0}x{1}'.format(SEA_W * UNIT, SEA_H * UNIT))
+        self._build_sea()
         self.steps_taken = 0
         self.generation = 0
         self.lines = []
@@ -43,10 +43,10 @@ class Sea(tk.Tk, object):
         return UNIT
 
     def get_width(self):
-        return MAZE_W
+        return SEA_W
 
     def get_height(self):
-        return MAZE_H
+        return SEA_H
 
     def get_winds(self):
         return self.softWinds, self.strongWinds
@@ -54,15 +54,18 @@ class Sea(tk.Tk, object):
     def get_telemetry(self):
         return self.telemetrics
 
-    def _build_maze(self):
-        self.canvas = tk.Canvas(self, height=MAZE_H * UNIT, width=MAZE_W * UNIT, bg="#5CB0C2")
+    def get_heatmap(self):
+        return self.heat_map
+
+    def _build_sea(self):
+        self.canvas = tk.Canvas(self, height=SEA_H * UNIT, width=SEA_W * UNIT, bg="#5CB0C2")
 
         # create grids
-        for c in range(0, MAZE_W * UNIT, UNIT):
-            x0, y0, x1, y1 = c, 0, c, MAZE_H * UNIT
+        for c in range(0, SEA_W * UNIT, UNIT):
+            x0, y0, x1, y1 = c, 0, c, SEA_H * UNIT
             self.canvas.create_line(x0, y0, x1, y1)
-        for r in range(0, MAZE_H * UNIT, UNIT):
-            x0, y0, x1, y1 = 0, r, MAZE_W * UNIT, r
+        for r in range(0, SEA_H * UNIT, UNIT):
+            x0, y0, x1, y1 = 0, r, SEA_W * UNIT, r
             self.canvas.create_line(x0, y0, x1, y1)
 
         # create origin
@@ -128,10 +131,10 @@ class Sea(tk.Tk, object):
             if s[1] > UNIT:
                 base_action[1] -= UNIT
         if action == 1 or action == 6 or action == 7:  # d, dr, dl
-            if s[1] < (MAZE_H - 1) * UNIT:
+            if s[1] < (SEA_H - 1) * UNIT:
                 base_action[1] += UNIT
         if action == 2 or action == 4 or action == 6:  # r, ur, dr
-            if s[0] < (MAZE_W - 1) * UNIT:
+            if s[0] < (SEA_W - 1) * UNIT:
                 base_action[0] += UNIT
         if action == 3 or action == 5 or action == 7:  # l, ul, ul
             if s[0] > UNIT:
@@ -215,6 +218,16 @@ class Sea(tk.Tk, object):
             s = [float(x) for x in s.split(", ")]
             self.canvas.create_rectangle(s[0] - 5, s[1] - 5, s[0] + 88 - 5, s[1] + 88 - 5, fill='green')
 
+    def animate_path(self, path):
+        for point in path:
+            self.canvas.delete(self.boat)
+            s = point.replace("[", "").replace("]", "")
+            s = [float(x) for x in s.split(", ")]
+            self.img2 = tk.PhotoImage(file=r"boat.gif")
+            self.boat = self.canvas.create_image(s[0], s[1], anchor=tk.NW, image=self.img2)
+            self.render()
+            time.sleep(0.66)
+
     def pseudocolor(self, value, minval, maxval, palette):
         """ Maps given value to a linearly interpolated palette color. """
         max_index = len(palette) - 1
@@ -232,16 +245,16 @@ class Sea(tk.Tk, object):
         color = (int(c * 255) for c in self.pseudocolor(value, minval, maxval, palette))
         return '#{:02x}{:02x}{:02x}'.format(*color)  # Convert to hex string.
 
-    def draw_heatmap(self):
-        print(self.heat_map)
+    def draw_heatmap(self, df):
+        # print(df)
 
-        heat_min = min(min(row) for row in self.heat_map)
-        heat_max = max(max(row) for row in self.heat_map)
+        heat_min = min(min(row) for row in df)
+        heat_max = max(max(row) for row in df)
 
         # Heatmap rgb colors in mapping order (ascending).
         palette = (0, 0, 1), (0, .5, 0), (0, 1, 0), (1, .5, 0), (1, 0, 0)
 
-        for y, row in enumerate(self.heat_map):
+        for y, row in enumerate(df):
             for x, temp in enumerate(row):
                 x0, y0 = x * UNIT, y * UNIT
                 x1, y1 = x0 + UNIT, y0 + UNIT

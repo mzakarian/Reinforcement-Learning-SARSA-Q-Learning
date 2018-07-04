@@ -11,8 +11,6 @@ import numpy as np
 import pickle
 import time
 
-rewards = pd.DataFrame(columns=['Rewards'])
-
 
 def get_row(df, location):
     return df.loc[location]
@@ -72,12 +70,12 @@ def scout(df):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.1f}".format(x)})
         new = np.array([(base_action[0] + float(s[0])), (base_action[1] + float(s[1]))])
         new = np.array2string(new, separator=', ')
-        print('From ' + row.name + ' to ' + new + ' moving ' + str(action) + " with " + str(base_action))
+        # print('From ' + row.name + ' to ' + new + ' moving ' + str(action) + " with " + str(base_action))
 
         # break loop when goal is reached
         if new == '[621.0, 269.0]':
             optimal_path.append(new)
-            print('PATH COMPLETED')
+            print('Optimal Path closed!')
             break
 
         # add coordinates to optimal path
@@ -87,75 +85,108 @@ def scout(df):
     return optimal_path
 
 
-def update(interim=True):
-    for episode in range(100):
-        counter = 0
-        # reset environment
-        s1 = session.reset()
+def update(show_steps=True, train=True, save=True):
+    if train:
+        rewards = pd.DataFrame(columns=['Rewards'])
+        for episode in range(100):
+            counter = 0
+            # reset environment
+            s1 = session.reset()
 
-        if interim:
-            session.draw_paths(agent.get_list())
+            if show_steps:
+                session.draw_paths(agent.get_list())
 
-        # choose action
-        a1 = agent.choose_action(str(s1))
+            # choose action
+            a1 = agent.choose_action(str(s1))
 
-        while True:
-            # refresh canvas
-            session.render()
+            while True:
+                # refresh canvas
+                session.render()
 
-            # do action and get new state and its reward
-            s2, r, done = session.step(a1)
+                # do action and get new state and its reward
+                s2, r, done = session.step(a1)
 
-            # choose next action based on policy
-            a2 = agent.choose_action(str(s2))
+                # choose next action based on policy
+                a2 = agent.choose_action(str(s2))
 
-            # start learning SARSA algorithm
-            agent.learn(str(s1), a1, r, str(s2), a2)
-            counter += agent.get_value(str(s1), a1)
+                # start learning SARSA algorithm
+                agent.learn(str(s1), a1, r, str(s2), a2)
+                counter += agent.get_value(str(s1), a1)
 
-            # set new state as root for next iteration
-            s1 = s2
-            a1 = a2
+                # set new state as root for next iteration
+                s1 = s2
+                a1 = a2
 
-            # break loop when terminal state is reached
-            if done:
-                break
+                # break loop when terminal state is reached
+                if done:
+                    break
 
-        if episode < 10:
-            time.sleep(2)
+            if episode < 10:
+                time.sleep(2)
 
-        rewards.loc[episode] = [counter]
+            rewards.loc[episode] = [counter]
 
-    # get current QValue list, evaluate it and draw the optimal path
-    result = agent.get_list()
-    path = scout(result)
-    print(path)
+        # get current QValue list
+        result = agent.get_list()
+        heatmap = session.get_heatmap()
+        telemetry = session.get_telemetry()
+    else:
+        # load all data
+        with open('data/sarsa.pickle', 'rb') as handle:
+            result = pickle.load(handle)
+        with open('data/heatmap.pickle', 'rb') as handle:
+            heatmap = pickle.load(handle)
+        with open('data/telemetry.pickle', 'rb') as handle:
+            telemetry = pickle.load(handle)
+        with open('data/rewards.pickle', 'rb') as handle:
+            rewards = pickle.load(handle)
+
+    # evaluate data and do some cool stuff
+
+    # track the optimal path
+    print('Showing best action for each state')
     session.draw_paths(result)
     session.render()
-    input("Press Enter to show paths...")
+
+    # show best actions for all states
+    input("Press Enter to show optimal path...")
+    session.reset()
+    path = scout(result)
     session.draw_optimal_path(path)
+    session.animate_path(path)
     session.render()
+
+    # show heat map
     input("Press Enter to show heatmap...")
-    session.draw_heatmap()
+    session.draw_heatmap(df=heatmap)
     session.render()
-    # plotting
-    plot(session.get_telemetry())
+
+    # plot rewards/episode and steps/episode
+    plot(telemetry)
     plot(rewards)
 
-    # EXPORT TO FILE
-    with open('sarsa.pickle', 'wb') as handle:
-        pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # EXPORT TO FILES
+    if train and save:
+        with open('data/sarsa.pickle', 'wb') as handle:
+            pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        print(result)
+        with open('data/heatmap.pickle', 'wb') as handle:
+            pickle.dump(heatmap, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    result.to_csv('sarsa.csv', sep=';', encoding='utf-8')
-    session.get_telemetry().to_csv('telemetry.csv', sep=';', encoding='utf-8')
+        with open('data/telemetry.pickle', 'wb') as handle:
+            pickle.dump(telemetry, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open('data/rewards.pickle', 'wb') as handle:
+            pickle.dump(rewards, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        result.to_csv('data/sarsa.csv', sep=';', encoding='utf-8')
+        telemetry.to_csv('data/telemetry.csv', sep=';', encoding='utf-8')
+        rewards.to_csv('data/rewards.csv', sep=';', encoding='utf-8')
 
 
 if __name__ == "__main__":
     session = Sea(action_set='normal', is_stoachstic=False)
     agent = Sarsa(actions=list(range(session.n_actions)))
 
-    session.after(100, update(interim=False))
+    session.after(100, update(show_steps=False, train=False, save=True))
     session.mainloop()
