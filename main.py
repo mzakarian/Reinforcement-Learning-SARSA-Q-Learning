@@ -16,8 +16,10 @@ def get_row(df, location):
     return df.loc[location]
 
 
-def plot(df):
+def plot(df, title):
     df.plot(style='.-', marker='o', markevery=10, markerfacecolor='black')
+    plt.title(title, fontsize=14)
+    plt.xlabel('Episodes')
     plt.show()
 
 
@@ -70,7 +72,8 @@ def scout(df):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.1f}".format(x)})
         new = np.array([(base_action[0] + float(s[0])), (base_action[1] + float(s[1]))])
         new = np.array2string(new, separator=', ')
-        # print('From ' + row.name + ' to ' + new + ' moving ' + str(action) + " with " + str(base_action))
+        # print('From ' + row.name + ' to ' + new + ' moving ' + str(action)
+        #       + " changing coordinates " + str(base_action))
 
         # break loop when goal is reached
         if new == '[621.0, 269.0]':
@@ -92,7 +95,7 @@ def update(episodes=100, show_steps=True, train=True, save=True):
             reward_counter = 0
 
             if show_steps and 1 <= episode < episodes * 0.1:
-                # draw QValue updates
+                # draw QValue updates for the first 10 % of episodes
                 session.draw_paths(agent.get_list())
                 time.sleep(1)
 
@@ -161,31 +164,32 @@ def update(episodes=100, show_steps=True, train=True, save=True):
     session.render()
 
     # plot rewards/episode and steps/episode
-    plot(rewards)
-    plot(telemetry)
+    input("Press Enter to plot interesting stuff...")
+    plot(rewards, 'Rewards per Episode')
+    plot(telemetry, 'Steps per Episode')
 
     # export data to files
     if train and save:
-        with open('data/sarsa.pickle', 'wb') as handle:
+        with open('data/advanced_plus_sarsa.pickle', 'wb') as handle:
             pickle.dump(result, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open('data/heatmap.pickle', 'wb') as handle:
+        with open('data/advanced_plus_heatmap.pickle', 'wb') as handle:
             pickle.dump(heatmap, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open('data/telemetry.pickle', 'wb') as handle:
+        with open('data/advanced_plus_telemetry.pickle', 'wb') as handle:
             pickle.dump(telemetry, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        with open('data/rewards.pickle', 'wb') as handle:
+        with open('data/advanced_plus_rewards.pickle', 'wb') as handle:
             pickle.dump(rewards, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        result.to_csv('data/sarsa.csv', sep=';', encoding='utf-8')
-        telemetry.to_csv('data/telemetry.csv', sep=';', encoding='utf-8')
-        rewards.to_csv('data/rewards.csv', sep=';', encoding='utf-8')
+        result.to_csv('data/advanced_plus_sarsa.csv', sep=';', encoding='utf-8')
+        telemetry.to_csv('data/advanced_plus_telemetry.csv', sep=';', encoding='utf-8')
+        rewards.to_csv('data/advanced_plus_rewards.csv', sep=';', encoding='utf-8')
 
 
 if __name__ == "__main__":
-    session = Sea(action_set='normal', is_stoachstic=False)
+    session = Sea(action_set='advanced_plus', is_stoachstic=False)
     agent = Sarsa(actions=list(range(session.n_actions)))
 
-    session.after(100, update(episodes=100, show_steps=True, train=True, save=False))
+    session.after(100, update(episodes=5000, show_steps=False, train=True, save=True))
     session.mainloop()

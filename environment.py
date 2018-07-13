@@ -199,7 +199,7 @@ class Sea(tk.Tk, object):
 
         # rewards
         if s_ == self.canvas.coords(self.goal):
-            reward = 1000
+            reward = 100
             done = True
             self.telemetrics.loc[self.generation] = [self.steps_taken]
             self.generation += 1
@@ -221,6 +221,9 @@ class Sea(tk.Tk, object):
         time.sleep(3)
         self.canvas.delete(self.boat)
 
+        for line in self.lines:
+            self.canvas.delete(line)
+
         for point in path:
             s = point.replace("[", "").replace("]", "")
             s = [float(x) for x in s.split(", ")]
@@ -234,7 +237,7 @@ class Sea(tk.Tk, object):
             self.img2 = tk.PhotoImage(file=r"boat.gif")
             self.boat = self.canvas.create_image(s[0], s[1], anchor=tk.NW, image=self.img2)
             self.render()
-            time.sleep(0.66)
+            time.sleep(0.33)
 
     def pseudocolor(self, value, minval, maxval, palette):
         """ Maps given value to a linearly interpolated palette color. """
@@ -333,4 +336,5 @@ class Sea(tk.Tk, object):
                     self.canvas.create_line(center + s[0], center + s[1], 0 + s[0], UNIT + s[1], tags=("line",),
                                             arrow="last", width=5))
             elif action == 8:  # nothing
-                self.lines.append(self.canvas.create_rectangle(center + s[0], center + s[1], 20, fill="black"))
+                self.lines.append(self.canvas.create_oval(center - 10 + s[0], center - 10 + s[1], center + 10 + s[0],
+                                                          center + 10 + s[1], fill="black"))
