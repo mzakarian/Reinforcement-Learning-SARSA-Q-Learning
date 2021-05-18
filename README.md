@@ -1,6 +1,6 @@
 # Reinforcement Learning
 
-Learn how to sail safely in dangerous waters to your goal by creating a generation based refinforcement learning model using Q-Learning or SARSA. 
+Learn how to sail safely in dangerous waters to your goal by creating a generation based reinforcement learning model using Q-Learning or SARSA. 
 
 ## What makes the waters dangerous?
 
@@ -22,20 +22,21 @@ You can configure:
 - value of positive/negative rewards
 - environment type (stochastic or deterministic)
 
-## Stats
+## Statistics
 
-You can also generate some statistics, like:
+The program automatically generates, shows and exports some related statistics. 
 
 ### Heatmaps
 ![heatmap](results/adv%2B_heatmap.png)
 
 ### Q-Values
-![heatmap](results/adv%2B_qvalue.png)
+A .csv file showing the q-value of every action (columns) for each episode (rows). 
+![qvalues](results/adv%2B_qvalue.png)
 
 ### Rewards/Episode
-![heatmap](results/adv%2B_rewards.png)
+![rewards](results/adv%2B_rewards.png)
 
 ### Steps/Episode
-![heatmap](results/adv%2B_steps.png)
+![steps](results/adv%2B_steps.png)
 
-> This program was developed as part of a project at the university.
+> This program was developed as part of a university project.
